@@ -1,10 +1,18 @@
 package com.example.guestinventory;
 
 import java.io.IOException;
+import java.net.URI;
 
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+
+import org.jboss.resteasy.annotations.Suspend;
+import org.jboss.resteasy.spi.AsynchronousResponse;
+import org.jboss.resteasy.spi.HttpRequest;
 
 import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
@@ -17,19 +25,27 @@ import com.googlecode.objectify.ObjectifyService;
  * servlet has one method {@link #doPost(<#HttpServletRequest req#>,
  * <#HttpServletResponse resp#>)} which takes the form data and saves it.
  */
-public class SignGuestinventoryServlet extends HttpServlet {
+@Path("/guestinventory/sign")
+public class SignGuestinventoryResource {
+	private static final String TEXT_PLAIN = "text/plain";
+
+	public SignGuestinventoryResource() {
+	}
 
 	// Process the http POST of the form
-	@Override
-	public void doPost(HttpServletRequest req, HttpServletResponse resp)
+	@POST
+	@Produces(TEXT_PLAIN)
+	public void doPost(@Context HttpRequest request,
+			@FormParam("guestinventoryName") String guestinventoryName,
+			@FormParam("content") String content,
+			@Suspend(10000) final AsynchronousResponse asynchResponse)
 			throws IOException {
+
 		Greeting greeting;
 
 		UserService userService = UserServiceFactory.getUserService();
 		User user = userService.getCurrentUser(); // Find out who the user is.
 
-		String guestinventoryName = req.getParameter("guestinventoryName");
-		String content = req.getParameter("content");
 		if (user != null) {
 			greeting = new Greeting(guestinventoryName, content,
 					user.getUserId(), user.getEmail());
@@ -38,12 +54,12 @@ public class SignGuestinventoryServlet extends HttpServlet {
 		}
 
 		// Use Objectify to save the greeting and now() is used to make the call
-		// synchronously as we
-		// will immediately get a new page using redirect and we want the data
-		// to be present.
+		// synchronously as we will immediately get a new page using redirect
+		// and we want the data to be present.
 		ObjectifyService.ofy().save().entity(greeting).now();
 
-		resp.sendRedirect("/guestinventory.jsp?guestinventoryName="
-				+ guestinventoryName);
+		asynchResponse.setResponse(Response.seeOther(
+				URI.create("/guestinventory.jsp?guestinventoryName="
+						+ guestinventoryName)).build());
 	}
 }

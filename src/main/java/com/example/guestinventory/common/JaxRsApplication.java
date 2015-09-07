@@ -6,6 +6,8 @@ import java.util.Set;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
+import com.example.guestinventory.GuestinventoryResource;
+import com.example.guestinventory.SignGuestinventoryResource;
 import com.example.guestinventory.subscription.SubscriptionResource;
 
 @ApplicationPath("/")
@@ -14,6 +16,8 @@ public class JaxRsApplication extends Application {
 
 	public JaxRsApplication() {
 		singletons.add(new SubscriptionResource());
+		singletons.add(new GuestinventoryResource());
+		singletons.add(new SignGuestinventoryResource());
 	}
 
 	@Override
@@ -21,6 +25,3 @@ public class JaxRsApplication extends Application {
 		return singletons;
 	}
 }
-
-// public class JaxRsApplication {
-// }

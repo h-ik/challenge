@@ -95,7 +95,7 @@
 		}
 	%>
 
-	<form action="/sign" method="post">
+	<form action="/guestinventory/sign" method="post">
 		<div>
 			<textarea name="content" rows="3" cols="60"></textarea>
 		</div>

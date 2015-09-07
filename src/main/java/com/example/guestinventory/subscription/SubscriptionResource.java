@@ -18,7 +18,7 @@ import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 
-@Path("/subscription")
+@Path("/guestinventory/subscription")
 public class SubscriptionResource {
 
 	public SubscriptionResource() {
