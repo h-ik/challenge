@@ -1,9 +1,12 @@
 package com.example.guestinventory.subscription;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "payload")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Payload {
 
 	@XmlAttribute

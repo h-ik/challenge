@@ -1,17 +1,14 @@
 package com.example.guestinventory.subscription;
 
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import javax.ws.rs.POST;
+import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.xml.bind.JAXBException;
 
 import org.jboss.resteasy.annotations.Suspend;
 import org.jboss.resteasy.spi.AsynchronousResponse;
@@ -23,6 +20,10 @@ import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 
 @Path("/subscription")
 public class SubscriptionResource {
+
+	public SubscriptionResource() {
+
+	}
 
 	private static final String APPLICATION_XML = "application/xml";
 
@@ -58,12 +59,12 @@ public class SubscriptionResource {
 		CREATE, CHANGE, CANCEL, STATUS
 	}
 
-	@POST
+	@GET
 	@Path("/create")
 	@Produces(APPLICATION_XML)
 	public void create(
 			@Suspend(10000) final AsynchronousResponse asynchResponse,
-			@PathParam("url") String stringUrl) {
+			@QueryParam("url") String stringUrl) {
 
 		handleOperation(Operation.CREATE, asynchResponse, stringUrl);
 	}
@@ -81,8 +82,7 @@ public class SubscriptionResource {
 			Event event = JaxbHelper.read(fetchResponse.get().getContent(),
 					Event.class);
 			handleEvent(o, event, asynchResponse);
-		} catch (MalformedURLException | InterruptedException
-				| ExecutionException | JAXBException e) {
+		} catch (Exception e) {
 			// TODO log exception
 
 			EventNotificationResult result = EventNotificationResult.failure();
@@ -139,33 +139,33 @@ public class SubscriptionResource {
 		asynchResponse.setResponse(responseBuilder.build());
 	}
 
-	@POST
+	@GET
 	@Path("/change")
 	@Produces(APPLICATION_XML)
 	public void change(
 			@Suspend(10000) final AsynchronousResponse asynchResponse,
-			@PathParam("url") String stringUrl) {
+			@QueryParam("url") String stringUrl) {
 
 		handleOperation(Operation.CHANGE, asynchResponse, stringUrl);
 	}
 
-	@POST
+	@GET
 	@Path("/cancel")
 	@Produces(APPLICATION_XML)
 	public void cancel(
 			@Suspend(10000) final AsynchronousResponse asynchResponse,
-			@PathParam("url") String stringUrl) {
+			@QueryParam("url") String stringUrl) {
 
 		handleOperation(Operation.CANCEL, asynchResponse, stringUrl);
 
 	}
 
-	@POST
+	@GET
 	@Path("/status")
 	@Produces(APPLICATION_XML)
 	public void notice(
 			@Suspend(10000) final AsynchronousResponse asynchResponse,
-			@PathParam("url") String stringUrl) {
+			@QueryParam("url") String stringUrl) {
 
 		handleOperation(Operation.STATUS, asynchResponse, stringUrl);
 
