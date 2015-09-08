@@ -10,13 +10,15 @@ import javax.xml.bind.Unmarshaller;
 
 public class JaxbHelper {
 
+	private static final String PACKAGES = "com.example.guestinventory.subscription"
+			+ ":com.example.guestinventory.subscription.error"
+			+ ":com.example.guestinventory.subscription.result";
 	private static JAXBContext CONTEXT = null;
 
 	static {
 
 		try {
-			CONTEXT = JAXBContext
-					.newInstance("com.example.guestinventory.subscription");
+			CONTEXT = JAXBContext.newInstance(PACKAGES);
 		} catch (JAXBException e) {
 			throw new RuntimeException(e);
 		}
@@ -24,10 +26,10 @@ public class JaxbHelper {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T> T read(byte[] in, Class<T> class1) throws JAXBException {
+	public static Object read(byte[] in) throws JAXBException {
 
 		Unmarshaller unmarshaller = CONTEXT.createUnmarshaller();
-		return (T) unmarshaller.unmarshal(new ByteArrayInputStream(in));
+		return unmarshaller.unmarshal(new ByteArrayInputStream(in));
 	}
 
 	public static void write(Object object, OutputStream out)

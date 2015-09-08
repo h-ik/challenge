@@ -1,7 +1,13 @@
 package com.example.guestinventory.subscription;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.concurrent.Future;
+import java.util.logging.Logger;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -14,6 +20,7 @@ import org.jboss.resteasy.annotations.Suspend;
 import org.jboss.resteasy.spi.AsynchronousResponse;
 
 import com.example.guestinventory.common.JaxbHelper;
+import com.example.guestinventory.subscription.result.EventNotificationResult;
 import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
@@ -25,6 +32,8 @@ public class SubscriptionResource {
 
 	}
 
+	private static final Logger log = Logger
+			.getLogger(SubscriptionResource.class.getName());
 	private static final String APPLICATION_XML = "application/xml";
 
 	enum SubscriptionEvent {
@@ -71,6 +80,7 @@ public class SubscriptionResource {
 
 	private void handleOperation(Operation o,
 			final AsynchronousResponse asynchResponse, String stringUrl) {
+		log.info("Handling operation " + o + ", query param url: " + stringUrl);
 		// TODO verify the OAuth signature
 
 		URLFetchService fetchService = URLFetchServiceFactory
@@ -79,15 +89,48 @@ public class SubscriptionResource {
 			Future<HTTPResponse> fetchResponse = fetchService
 					.fetchAsync(new URL(stringUrl));
 
-			Event event = JaxbHelper.read(fetchResponse.get().getContent(),
-					Event.class);
-			handleEvent(o, event, asynchResponse);
+			HTTPResponse httpResponse = fetchResponse.get();
+			byte[] content = httpResponse.getContent();
+
+			logXmlBody(content);
+
+			Object unmarshalled = JaxbHelper.read(content);
+			if (unmarshalled instanceof Event) {
+				handleEvent(o, (Event) unmarshalled, asynchResponse);
+			} else if (unmarshalled instanceof com.example.guestinventory.subscription.error.Error) {
+				handleError(
+						(com.example.guestinventory.subscription.error.Error) unmarshalled,
+						asynchResponse);
+			} else {
+				handleFailure(asynchResponse);
+			}
 		} catch (Exception e) {
 			// TODO log exception
-
-			EventNotificationResult result = EventNotificationResult.failure();
-			asynchResponse.setResponse(Response.ok(result).build());
+			log.info("Exception when handling operation" + o
+					+ ". Returning failure result due to: " + e);
+			handleFailure(asynchResponse);
 		}
+	}
+
+	private void handleError(
+			com.example.guestinventory.subscription.error.Error e,
+			AsynchronousResponse asynchResponse) {
+		EventNotificationResult result = EventNotificationResult.failure(
+				e.getCode(), e.getMessage());
+		asynchResponse.setResponse(Response.ok(result).build());
+	}
+
+	private void handleFailure(final AsynchronousResponse asynchResponse) {
+		EventNotificationResult result = EventNotificationResult.failure();
+		asynchResponse.setResponse(Response.ok(result).build());
+	}
+
+	private void logXmlBody(byte[] content)
+			throws UnsupportedEncodingException, IOException {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(
+				new ByteArrayInputStream(content), "UTF-8"));
+		String body = reader.readLine();
+		log.info("Received xml body: " + body);
 	}
 
 	private void handleEvent(Operation o, Event event,

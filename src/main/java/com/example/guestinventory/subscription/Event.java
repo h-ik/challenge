@@ -3,6 +3,7 @@ package com.example.guestinventory.subscription;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "event")
@@ -18,7 +19,7 @@ public class Event {
 	@XmlAttribute
 	private String creator;
 
-	@XmlAttribute
+	@XmlElement(nillable = true)
 	private Payload payload;
 
 	@XmlAttribute

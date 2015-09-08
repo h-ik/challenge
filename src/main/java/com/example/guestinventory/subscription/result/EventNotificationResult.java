@@ -1,4 +1,4 @@
-package com.example.guestinventory.subscription;
+package com.example.guestinventory.subscription.result;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -68,6 +68,13 @@ public class EventNotificationResult {
 	public static EventNotificationResult failure() {
 		EventNotificationResult result = new EventNotificationResult();
 		result.setSuccess(false);
+		return result;
+	}
+
+	public static EventNotificationResult failure(String code, String message) {
+		EventNotificationResult result = EventNotificationResult.failure();
+		result.setErrorCode(code);
+		result.setMessage(message);
 		return result;
 	}
 }
