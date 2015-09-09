@@ -5,6 +5,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
@@ -15,6 +16,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+
+import oauth.signpost.OAuthConsumer;
+import oauth.signpost.basic.DefaultOAuthConsumer;
+import oauth.signpost.exception.OAuthCommunicationException;
+import oauth.signpost.exception.OAuthExpectationFailedException;
+import oauth.signpost.exception.OAuthMessageSignerException;
 
 import org.jboss.resteasy.annotations.Suspend;
 import org.jboss.resteasy.spi.AsynchronousResponse;
@@ -81,13 +88,17 @@ public class SubscriptionResource {
 	private void handleOperation(Operation o,
 			final AsynchronousResponse asynchResponse, String stringUrl) {
 		log.info("Handling operation " + o + ", query param url: " + stringUrl);
-		// TODO verify the OAuth signature
 
-		URLFetchService fetchService = URLFetchServiceFactory
-				.getURLFetchService();
 		try {
-			Future<HTTPResponse> fetchResponse = fetchService
-					.fetchAsync(new URL(stringUrl));
+			URL url = new URL(stringUrl);
+			// TODO
+			// HttpURLConnection connection = verifyOAuthSignature(url);
+			// InputStream response = connection.getInputStream();
+
+			URLFetchService fetchService = URLFetchServiceFactory
+					.getURLFetchService();
+
+			Future<HTTPResponse> fetchResponse = fetchService.fetchAsync(url);
 
 			HTTPResponse httpResponse = fetchResponse.get();
 			byte[] content = httpResponse.getContent();
@@ -105,11 +116,37 @@ public class SubscriptionResource {
 				handleFailure(asynchResponse);
 			}
 		} catch (Exception e) {
-			// TODO log exception
-			log.info("Exception when handling operation" + o
-					+ ". Returning failure result due to: " + e);
-			handleFailure(asynchResponse);
+			handleFailure(o, asynchResponse, e);
 		}
+	}
+
+	public String getContent(HttpURLConnection conn) throws IOException {
+		StringBuilder content = new StringBuilder();
+
+		// wrap the urlconnection in a bufferedreader
+		BufferedReader bufferedReader = new BufferedReader(
+				new InputStreamReader(conn.getInputStream()));
+
+		String line;
+
+		// read from the urlconnection via the bufferedreader
+		while ((line = bufferedReader.readLine()) != null) {
+			content.append(line + "\n");
+		}
+		bufferedReader.close();
+
+		return content.toString();
+	}
+
+	private HttpURLConnection verifyOAuthSignature(URL url) throws IOException,
+			OAuthMessageSignerException, OAuthExpectationFailedException,
+			OAuthCommunicationException {
+
+		OAuthConsumer consumer = new DefaultOAuthConsumer("Dummy", "secret");
+		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+		consumer.sign(connection);
+		connection.connect();
+		return connection;
 	}
 
 	private void handleError(
@@ -118,6 +155,13 @@ public class SubscriptionResource {
 		EventNotificationResult result = EventNotificationResult.failure(
 				e.getCode(), e.getMessage());
 		asynchResponse.setResponse(Response.ok(result).build());
+	}
+
+	private void handleFailure(Operation o,
+			final AsynchronousResponse asynchResponse, Exception e) {
+		log.info("Exception when handling operation" + o
+				+ ". Returning failure result due to: " + e);
+		handleFailure(asynchResponse);
 	}
 
 	private void handleFailure(final AsynchronousResponse asynchResponse) {
